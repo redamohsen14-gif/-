@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>الرئيسية — مصنع الشلوي للذهب</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div id="header-placeholder"></div>
+
+    <div class="page-content">
+      <div class="breadcrumb">
+        <span>🏠</span>
+        <span class="sep">›</span>
+        <span>الرئيسية</span>
+      </div>
+
+      <!-- Quick Access Cards -->
+      <div class="stats-grid fade-in fade-in-1" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+
+        <a href="dashboard.html" style="text-decoration:none;">
+          <div class="stat-card" style="flex-direction:column;align-items:flex-start;gap:12px;cursor:pointer;">
+            <div class="stat-icon" style="font-size:28px;">📊</div>
+            <div>
+              <div class="stat-label">لوحة التحكم</div>
+              <div style="font-size:13px;color:var(--text-muted);">إحصائيات وآخر العمليات</div>
+            </div>
+          </div>
+        </a>
+
+        <a href="orders.html" style="text-decoration:none;">
+          <div class="stat-card" style="flex-direction:column;align-items:flex-start;gap:12px;cursor:pointer;">
+            <div class="stat-icon" style="font-size:28px;">📋</div>
+            <div>
+              <div class="stat-label">إدارة الطلبات</div>
+              <div style="font-size:13px;color:var(--text-muted);">إضافة وإدارة الطلبات</div>
+            </div>
+          </div>
+        </a>
+
+        <a href="products.html" style="text-decoration:none;">
+          <div class="stat-card" style="flex-direction:column;align-items:flex-start;gap:12px;cursor:pointer;">
+            <div class="stat-icon" style="font-size:28px;">💍</div>
+            <div>
+              <div class="stat-label">إدارة المنتجات</div>
+              <div style="font-size:13px;color:var(--text-muted);">كتالوج المنتجات الذهبية</div>
+            </div>
+          </div>
+        </a>
+
+        <a href="ingots.html" style="text-decoration:none;">
+          <div class="stat-card" style="flex-direction:column;align-items:flex-start;gap:12px;cursor:pointer;">
+            <div class="stat-icon" style="font-size:28px;">🥇</div>
+            <div>
+              <div class="stat-label">إدارة السبائك</div>
+              <div style="font-size:13px;color:var(--text-muted);">مخزون السبائك الذهبية</div>
+            </div>
+          </div>
+        </a>
+
+        <a href="agents.html" style="text-decoration:none;">
+          <div class="stat-card" style="flex-direction:column;align-items:flex-start;gap:12px;cursor:pointer;">
+            <div class="stat-icon" style="font-size:28px;">👤</div>
+            <div>
+              <div class="stat-label">المندوبون</div>
+              <div style="font-size:13px;color:var(--text-muted);">إدارة فريق المبيعات</div>
+            </div>
+          </div>
+        </a>
+
+        <a href="users.html" style="text-decoration:none;">
+          <div class="stat-card" style="flex-direction:column;align-items:flex-start;gap:12px;cursor:pointer;">
+            <div class="stat-icon" style="font-size:28px;">👥</div>
+            <div>
+              <div class="stat-label">المستخدمون</div>
+              <div style="font-size:13px;color:var(--text-muted);">إدارة صلاحيات النظام</div>
+            </div>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- Welcome Banner -->
+      <div class="card fade-in fade-in-2" style="margin-top:8px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:24px;padding:32px;">
+          <div style="font-size:64px;">🏅</div>
+          <div>
+            <h2 style="font-size:20px;font-weight:900;color:var(--gold-300);margin-bottom:8px;">
+              مرحباً بك في نظام مصنع الشلوي للذهب
+            </h2>
+            <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;">
+              نظام متكامل لإدارة عمليات مصنع الذهب. يمكنك من خلاله إدارة الطلبات، المنتجات، السبائك، والمندوبين
+              بكل سهولة ويسر. جميع البيانات محفوظة بأمان على خوادم Firebase.
+            </p>
+            <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+              <a href="dashboard.html" class="btn btn-primary">عرض لوحة التحكم</a>
+              <a href="orders.html" class="btn btn-outline">إضافة طلب جديد</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/database.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  requireAuth();
+  injectLayout('الصفحة الرئيسية', 'نظام إدارة مصنع الشلوي للذهب', 'home');
+</script>
+</body>
+</html>

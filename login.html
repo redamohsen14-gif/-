@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تسجيل الدخول — مصنع الشلوي للذهب</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-bg"></div>
+  <div class="login-grid"></div>
+
+  <div class="login-card fade-in">
+    <!-- Logo -->
+    <div class="login-logo">
+      <div class="login-logo-icon">🏅</div>
+      <h1>مصنع الشلوي للذهب</h1>
+      <p>نظام إدارة المصنع المتكامل</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
+      <button class="login-tab" onclick="switchTab('reset')">نسيت كلمة المرور</button>
+    </div>
+
+    <!-- Login Tab -->
+    <div id="tab-login" class="tab-content active">
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" id="login-email" class="form-control" placeholder="أدخل بريدك الإلكتروني" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور</label>
+        <input type="password" id="login-password" class="form-control" placeholder="أدخل كلمة المرور" />
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="handleLogin()" id="login-btn">
+        <span id="login-btn-text">تسجيل الدخول</span>
+        <span id="login-spinner" class="spinner" style="display:none;border-top-color:#0D0D0D"></span>
+      </button>
+    </div>
+
+    <!-- Reset Password Tab -->
+    <div id="tab-reset" class="tab-content">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.6;">
+        أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.
+      </p>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" id="reset-email" class="form-control" placeholder="أدخل بريدك الإلكتروني" />
+      </div>
+      <button class="btn btn-primary btn-full" onclick="handleReset()">إرسال رابط الاسترداد</button>
+      <div style="text-align:center;margin-top:16px;">
+        <button class="btn btn-ghost btn-sm" onclick="switchTab('login')">← العودة لتسجيل الدخول</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // تأكد أن المستخدم غير مسجل دخوله
+  requireGuest();
+
+  function switchTab(tab) {
+    document.querySelectorAll('.login-tab').forEach((t, i) => {
+      t.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'reset' && i === 1));
+    });
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('tab-reset').classList.toggle('active', tab === 'reset');
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) { showToast('يرجى إدخال البريد الإلكتروني وكلمة المرور', 'warning'); return; }
+    await signIn(email, password);
+  }
+
+  async function handleReset() {
+    const email = document.getElementById('reset-email').value.trim();
+    if (!email) { showToast('يرجى إدخال البريد الإلكتروني', 'warning'); return; }
+    await resetPassword(email);
+  }
+
+  // Enter key support
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const tab = document.getElementById('tab-login').classList.contains('active');
+      if (tab) handleLogin();
+    }
+  });
+</script>
+</body>
+</html>

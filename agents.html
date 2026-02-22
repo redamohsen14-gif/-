@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المندوبون — مصنع الشلوي للذهب</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-placeholder"></div>
+  <div class="main-content">
+    <div id="header-placeholder"></div>
+    <div class="page-content">
+
+      <div class="breadcrumb">
+        <a href="index.html">🏠 الرئيسية</a>
+        <span class="sep">›</span>
+        <span>المندوبون</span>
+      </div>
+
+      <div class="card fade-in fade-in-1">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">👤</span> إدارة المندوبين</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div class="search-bar">
+              <input type="text" id="search-input" placeholder="بحث بالاسم..." oninput="filterTable()" />
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ إضافة مندوب</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>الاسم</th>
+                <th>الجوال</th>
+                <th>البريد الإلكتروني</th>
+                <th>المنطقة</th>
+                <th>نسبة العمولة</th>
+                <th>الحالة</th>
+                <th>تاريخ الانضمام</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr><td colspan="9"><div class="empty-state"><div class="icon">⏳</div><h3>جاري التحميل...</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><span class="icon">👤</span> <span id="modal-title-text">إضافة مندوب جديد</span></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" />
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">الاسم *</label>
+          <input type="text" id="f-name" class="form-control" placeholder="اسم المندوب" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الجوال *</label>
+          <input type="text" id="f-phone" class="form-control" placeholder="05xxxxxxxx" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">البريد الإلكتروني</label>
+          <input type="email" id="f-email" class="form-control" placeholder="example@email.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">المنطقة</label>
+          <input type="text" id="f-region" class="form-control" placeholder="مثل: الرياض" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">نسبة العمولة (%)</label>
+          <input type="number" id="f-commission" class="form-control" placeholder="0" step="0.5" max="100" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">الحالة</label>
+          <select id="f-status" class="form-control">
+            <option value="active">نشط</option>
+            <option value="inactive">غير نشط</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظات</label>
+        <textarea id="f-notes" class="form-control" rows="2" placeholder="أي ملاحظات..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveRecord()">حفظ المندوب</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger);">⚠️ تأكيد الحذف</div>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body"><p style="color:var(--text-secondary);">هل أنت متأكد من حذف هذا المندوب؟</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">إلغاء</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">حذف</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/database.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  requireAuth();
+  injectLayout('المندوبون', 'إدارة فريق المبيعات والمندوبين', 'agents');
+
+  let allRecords = [];
+  let deleteId = null;
+
+  async function loadRecords() {
+    allRecords = await DB.agents.getAll();
+    renderTable(allRecords);
+  }
+
+  function renderTable(records) {
+    const tbody = document.getElementById('table-body');
+    if (records.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">👤</div><h3>لا يوجد مندوبون</h3><p>اضغط على "إضافة مندوب" للبدء</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = records.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${r.name || '-'}</strong></td>
+        <td>${r.phone || '-'}</td>
+        <td>${r.email || '-'}</td>
+        <td>${r.region || '-'}</td>
+        <td>${r.commission || 0}%</td>
+        <td><span class="badge ${r.status === 'active' ? 'badge-success' : 'badge-muted'}">${r.status === 'active' ? 'نشط' : 'غير نشط'}</span></td>
+        <td style="font-size:12px;color:var(--text-muted)">${formatDate(r.createdAt)}</td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-outline btn-sm" onclick="editRecord('${r.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteRecord('${r.id}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    renderTable(allRecords.filter(r => (r.name || '').toLowerCase().includes(q) || (r.region || '').toLowerCase().includes(q)));
+  }
+
+  function openModal() {
+    document.getElementById('edit-id').value = '';
+    ['name','phone','email','region','commission','notes'].forEach(f => { const el = document.getElementById('f-' + f); if (el) el.value = ''; });
+    document.getElementById('f-status').value = 'active';
+    document.getElementById('modal-title-text').textContent = 'إضافة مندوب جديد';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function editRecord(id) {
+    const r = allRecords.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('edit-id').value = id;
+    document.getElementById('f-name').value = r.name || '';
+    document.getElementById('f-phone').value = r.phone || '';
+    document.getElementById('f-email').value = r.email || '';
+    document.getElementById('f-region').value = r.region || '';
+    document.getElementById('f-commission').value = r.commission || '';
+    document.getElementById('f-status').value = r.status || 'active';
+    document.getElementById('f-notes').value = r.notes || '';
+    document.getElementById('modal-title-text').textContent = 'تعديل المندوب';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  async function saveRecord() {
+    const id = document.getElementById('edit-id').value;
+    const data = {
+      name: document.getElementById('f-name').value.trim(),
+      phone: document.getElementById('f-phone').value.trim(),
+      email: document.getElementById('f-email').value.trim(),
+      region: document.getElementById('f-region').value.trim(),
+      commission: parseFloat(document.getElementById('f-commission').value) || 0,
+      status: document.getElementById('f-status').value,
+      notes: document.getElementById('f-notes').value.trim()
+    };
+    if (!data.name) { showToast('يرجى إدخال اسم المندوب', 'warning'); return; }
+    const result = id ? await DB.agents.update(id, data) : await DB.agents.add(data);
+    if (result.success) { closeModal(); loadRecords(); }
+  }
+
+  function deleteRecord(id) { deleteId = id; document.getElementById('delete-modal').classList.add('open'); }
+  function closeDeleteModal() { deleteId = null; document.getElementById('delete-modal').classList.remove('open'); }
+  async function confirmDelete() {
+    if (!deleteId) return;
+    const result = await DB.agents.delete(deleteId);
+    if (result.success) { closeDeleteModal(); loadRecords(); }
+  }
+
+  auth.onAuthStateChanged(user => { if (user) loadRecords(); });
+</script>
+</body>
+</html>

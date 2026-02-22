@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>الطلبات — مصنع الشلوي للذهب</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-placeholder"></div>
+  <div class="main-content">
+    <div id="header-placeholder"></div>
+    <div class="page-content">
+
+      <div class="breadcrumb">
+        <a href="index.html">🏠 الرئيسية</a>
+        <span class="sep">›</span>
+        <span>الطلبات</span>
+      </div>
+
+      <div class="card fade-in fade-in-1">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📋</span> إدارة الطلبات</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div class="search-bar">
+              <input type="text" id="search-input" placeholder="بحث باسم العميل..." oninput="filterTable()" />
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ إضافة طلب</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم العميل</th>
+                <th>المنتج</th>
+                <th>الوزن (جرام)</th>
+                <th>القيمة (ريال)</th>
+                <th>المندوب</th>
+                <th>الحالة</th>
+                <th>التاريخ</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr>
+                <td colspan="9">
+                  <div class="empty-state">
+                    <div class="icon">⏳</div>
+                    <h3>جاري التحميل...</h3>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><span class="icon">📋</span> <span id="modal-title-text">إضافة طلب جديد</span></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" />
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">اسم العميل *</label>
+          <input type="text" id="f-clientName" class="form-control" placeholder="اسم العميل" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الجوال</label>
+          <input type="text" id="f-clientPhone" class="form-control" placeholder="05xxxxxxxx" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">المنتج *</label>
+          <input type="text" id="f-productName" class="form-control" placeholder="اسم المنتج" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">الوزن (جرام) *</label>
+          <input type="number" id="f-weight" class="form-control" placeholder="0.00" step="0.01" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">القيمة (ريال) *</label>
+          <input type="number" id="f-value" class="form-control" placeholder="0.00" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">المندوب</label>
+          <input type="text" id="f-agent" class="form-control" placeholder="اسم المندوب" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الحالة</label>
+        <select id="f-status" class="form-control">
+          <option value="pending">معلق</option>
+          <option value="processing">قيد التنفيذ</option>
+          <option value="completed">مكتمل</option>
+          <option value="cancelled">ملغي</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظات</label>
+        <textarea id="f-notes" class="form-control" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveRecord()">حفظ الطلب</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger);">⚠️ تأكيد الحذف</div>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-secondary);">هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">إلغاء</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">حذف</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/database.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  requireAuth();
+  injectLayout('الطلبات', 'إدارة طلبات العملاء', 'orders');
+
+  let allRecords = [];
+  let deleteId = null;
+
+  const statusMap = {
+    pending: { label: 'معلق', cls: 'badge-muted' },
+    processing: { label: 'قيد التنفيذ', cls: 'badge-info' },
+    completed: { label: 'مكتمل', cls: 'badge-success' },
+    cancelled: { label: 'ملغي', cls: 'badge-danger' }
+  };
+
+  async function loadRecords() {
+    allRecords = await DB.orders.getAll();
+    renderTable(allRecords);
+  }
+
+  function renderTable(records) {
+    const tbody = document.getElementById('table-body');
+    if (records.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">📋</div><h3>لا توجد طلبات</h3><p>اضغط على "إضافة طلب" لإضافة أول طلب</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = records.map((r, i) => {
+      const s = statusMap[r.status] || { label: r.status || '-', cls: 'badge-muted' };
+      return `<tr>
+        <td>${i + 1}</td>
+        <td><strong>${r.clientName || '-'}</strong><br><small style="color:var(--text-muted)">${r.clientPhone || ''}</small></td>
+        <td>${r.productName || '-'}</td>
+        <td>${formatNumber(r.weight)}</td>
+        <td><strong>${formatNumber(r.value)}</strong></td>
+        <td>${r.agent || '-'}</td>
+        <td><span class="badge ${s.cls}">${s.label}</span></td>
+        <td style="font-size:12px;color:var(--text-muted)">${formatDate(r.createdAt)}</td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-outline btn-sm" onclick="editRecord('${r.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteRecord('${r.id}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const filtered = allRecords.filter(r =>
+      (r.clientName || '').toLowerCase().includes(q) ||
+      (r.productName || '').toLowerCase().includes(q) ||
+      (r.agent || '').toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  function openModal(id = null) {
+    document.getElementById('edit-id').value = '';
+    ['clientName','clientPhone','productName','weight','value','agent','notes'].forEach(f => {
+      const el = document.getElementById('f-' + f);
+      if (el) el.value = '';
+    });
+    document.getElementById('f-status').value = 'pending';
+    document.getElementById('modal-title-text').textContent = 'إضافة طلب جديد';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function editRecord(id) {
+    const r = allRecords.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('edit-id').value = id;
+    document.getElementById('f-clientName').value = r.clientName || '';
+    document.getElementById('f-clientPhone').value = r.clientPhone || '';
+    document.getElementById('f-productName').value = r.productName || '';
+    document.getElementById('f-weight').value = r.weight || '';
+    document.getElementById('f-value').value = r.value || '';
+    document.getElementById('f-agent').value = r.agent || '';
+    document.getElementById('f-status').value = r.status || 'pending';
+    document.getElementById('f-notes').value = r.notes || '';
+    document.getElementById('modal-title-text').textContent = 'تعديل الطلب';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  async function saveRecord() {
+    const id = document.getElementById('edit-id').value;
+    const data = {
+      clientName: document.getElementById('f-clientName').value.trim(),
+      clientPhone: document.getElementById('f-clientPhone').value.trim(),
+      productName: document.getElementById('f-productName').value.trim(),
+      weight: parseFloat(document.getElementById('f-weight').value) || 0,
+      value: parseFloat(document.getElementById('f-value').value) || 0,
+      agent: document.getElementById('f-agent').value.trim(),
+      status: document.getElementById('f-status').value,
+      notes: document.getElementById('f-notes').value.trim()
+    };
+    if (!data.clientName || !data.productName) {
+      showToast('يرجى إدخال اسم العميل والمنتج', 'warning'); return;
+    }
+    let result;
+    if (id) result = await DB.orders.update(id, data);
+    else result = await DB.orders.add(data);
+    if (result.success) { closeModal(); loadRecords(); }
+  }
+
+  function deleteRecord(id) {
+    deleteId = id;
+    document.getElementById('delete-modal').classList.add('open');
+  }
+
+  function closeDeleteModal() {
+    deleteId = null;
+    document.getElementById('delete-modal').classList.remove('open');
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return;
+    const result = await DB.orders.delete(deleteId);
+    if (result.success) { closeDeleteModal(); loadRecords(); }
+  }
+
+  auth.onAuthStateChanged(user => { if (user) loadRecords(); });
+</script>
+</body>
+</html>

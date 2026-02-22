@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المنتجات — مصنع الشلوي للذهب</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-placeholder"></div>
+  <div class="main-content">
+    <div id="header-placeholder"></div>
+    <div class="page-content">
+
+      <div class="breadcrumb">
+        <a href="index.html">🏠 الرئيسية</a>
+        <span class="sep">›</span>
+        <span>المنتجات</span>
+      </div>
+
+      <div class="card fade-in fade-in-1">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">💍</span> إدارة المنتجات</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div class="search-bar">
+              <input type="text" id="search-input" placeholder="بحث بالاسم..." oninput="filterTable()" />
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ إضافة منتج</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم المنتج</th>
+                <th>العيار</th>
+                <th>الوزن (جرام)</th>
+                <th>السعر (ريال)</th>
+                <th>المخزون</th>
+                <th>الفئة</th>
+                <th>التاريخ</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr><td colspan="9"><div class="empty-state"><div class="icon">⏳</div><h3>جاري التحميل...</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><span class="icon">💍</span> <span id="modal-title-text">إضافة منتج جديد</span></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" />
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">اسم المنتج *</label>
+          <input type="text" id="f-name" class="form-control" placeholder="مثل: خاتم ذهبي" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">الفئة</label>
+          <select id="f-category" class="form-control">
+            <option value="خواتم">خواتم</option>
+            <option value="أساور">أساور</option>
+            <option value="قلادات">قلادات</option>
+            <option value="أقراط">أقراط</option>
+            <option value="دبل">دبل</option>
+            <option value="أطقم">أطقم</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">العيار *</label>
+          <select id="f-karat" class="form-control">
+            <option value="18">18</option>
+            <option value="21">21</option>
+            <option value="22">22</option>
+            <option value="24">24</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الوزن (جرام)</label>
+          <input type="number" id="f-weight" class="form-control" placeholder="0.00" step="0.01" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">السعر (ريال) *</label>
+          <input type="number" id="f-price" class="form-control" placeholder="0.00" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">الكمية في المخزون</label>
+          <input type="number" id="f-stock" class="form-control" placeholder="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الوصف</label>
+        <textarea id="f-description" class="form-control" rows="2" placeholder="وصف المنتج..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveRecord()">حفظ المنتج</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger);">⚠️ تأكيد الحذف</div>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body"><p style="color:var(--text-secondary);">هل أنت متأكد من حذف هذا المنتج؟</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">إلغاء</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">حذف</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/database.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  requireAuth();
+  injectLayout('المنتجات', 'إدارة كتالوج المنتجات الذهبية', 'products');
+
+  let allRecords = [];
+  let deleteId = null;
+
+  async function loadRecords() {
+    allRecords = await DB.products.getAll();
+    renderTable(allRecords);
+  }
+
+  function renderTable(records) {
+    const tbody = document.getElementById('table-body');
+    if (records.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">💍</div><h3>لا توجد منتجات</h3><p>اضغط على "إضافة منتج" للبدء</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = records.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${r.name || '-'}</strong></td>
+        <td><span class="badge badge-gold">${r.karat || '-'} عيار</span></td>
+        <td>${formatNumber(r.weight)}</td>
+        <td><strong>${formatNumber(r.price)}</strong></td>
+        <td>${formatNumber(r.stock) || 0}</td>
+        <td>${r.category || '-'}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${formatDate(r.createdAt)}</td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-outline btn-sm" onclick="editRecord('${r.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteRecord('${r.id}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    renderTable(allRecords.filter(r => (r.name || '').toLowerCase().includes(q) || (r.category || '').toLowerCase().includes(q)));
+  }
+
+  function openModal() {
+    document.getElementById('edit-id').value = '';
+    ['name','weight','price','stock','description'].forEach(f => { const el = document.getElementById('f-' + f); if (el) el.value = ''; });
+    document.getElementById('f-karat').value = '21';
+    document.getElementById('f-category').value = 'خواتم';
+    document.getElementById('modal-title-text').textContent = 'إضافة منتج جديد';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function editRecord(id) {
+    const r = allRecords.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('edit-id').value = id;
+    document.getElementById('f-name').value = r.name || '';
+    document.getElementById('f-karat').value = r.karat || '21';
+    document.getElementById('f-category').value = r.category || 'خواتم';
+    document.getElementById('f-weight').value = r.weight || '';
+    document.getElementById('f-price').value = r.price || '';
+    document.getElementById('f-stock').value = r.stock || '';
+    document.getElementById('f-description').value = r.description || '';
+    document.getElementById('modal-title-text').textContent = 'تعديل المنتج';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  async function saveRecord() {
+    const id = document.getElementById('edit-id').value;
+    const data = {
+      name: document.getElementById('f-name').value.trim(),
+      karat: document.getElementById('f-karat').value,
+      category: document.getElementById('f-category').value,
+      weight: parseFloat(document.getElementById('f-weight').value) || 0,
+      price: parseFloat(document.getElementById('f-price').value) || 0,
+      stock: parseInt(document.getElementById('f-stock').value) || 0,
+      description: document.getElementById('f-description').value.trim()
+    };
+    if (!data.name) { showToast('يرجى إدخال اسم المنتج', 'warning'); return; }
+    const result = id ? await DB.products.update(id, data) : await DB.products.add(data);
+    if (result.success) { closeModal(); loadRecords(); }
+  }
+
+  function deleteRecord(id) { deleteId = id; document.getElementById('delete-modal').classList.add('open'); }
+  function closeDeleteModal() { deleteId = null; document.getElementById('delete-modal').classList.remove('open'); }
+  async function confirmDelete() {
+    if (!deleteId) return;
+    const result = await DB.products.delete(deleteId);
+    if (result.success) { closeDeleteModal(); loadRecords(); }
+  }
+
+  auth.onAuthStateChanged(user => { if (user) loadRecords(); });
+</script>
+</body>
+</html>

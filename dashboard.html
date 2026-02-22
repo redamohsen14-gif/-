@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة التحكم — مصنع الشلوي للذهب</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div id="header-placeholder"></div>
+
+    <div class="page-content">
+      <div class="breadcrumb">
+        <a href="index.html">🏠 الرئيسية</a>
+        <span class="sep">›</span>
+        <span>لوحة التحكم</span>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid fade-in fade-in-1">
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-info">
+            <div class="stat-label">إجمالي الطلبات</div>
+            <div class="stat-value" id="count-orders">...</div>
+            <div class="stat-trend">↑ الطلبات الكلية</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💍</div>
+          <div class="stat-info">
+            <div class="stat-label">المنتجات</div>
+            <div class="stat-value" id="count-products">...</div>
+            <div class="stat-trend">↑ منتجات في الكتالوج</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🥇</div>
+          <div class="stat-info">
+            <div class="stat-label">السبائك</div>
+            <div class="stat-value" id="count-ingots">...</div>
+            <div class="stat-trend">↑ سبيكة في المخزون</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👤</div>
+          <div class="stat-info">
+            <div class="stat-label">المندوبون</div>
+            <div class="stat-value" id="count-agents">...</div>
+            <div class="stat-trend">↑ مندوب نشط</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <div class="stat-label">المستخدمون</div>
+            <div class="stat-value" id="count-users">...</div>
+            <div class="stat-trend">↑ مستخدم مسجل</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="card fade-in fade-in-2">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">📋</span>
+            آخر ١٠ طلبات
+          </div>
+          <a href="orders.html" class="btn btn-outline btn-sm">عرض الكل</a>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم العميل</th>
+                <th>المنتج</th>
+                <th>الوزن (جرام)</th>
+                <th>القيمة (ريال)</th>
+                <th>الحالة</th>
+                <th>التاريخ</th>
+              </tr>
+            </thead>
+            <tbody id="recent-orders-body">
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <div class="icon">⏳</div>
+                    <h3>جاري التحميل...</h3>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Products & Ingots -->
+      <div class="grid-2 fade-in fade-in-3" style="margin-top:20px;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">💍</span> آخر المنتجات</div>
+            <a href="products.html" class="btn btn-outline btn-sm">عرض الكل</a>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr><th>المنتج</th><th>العيار</th><th>السعر</th></tr>
+              </thead>
+              <tbody id="recent-products-body">
+                <tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🥇</span> آخر السبائك</div>
+            <a href="ingots.html" class="btn btn-outline btn-sm">عرض الكل</a>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr><th>السبيكة</th><th>الوزن</th><th>المورد</th></tr>
+              </thead>
+              <tbody id="recent-ingots-body">
+                <tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/database.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  requireAuth();
+  injectLayout('لوحة التحكم', 'نظرة عامة على النظام', 'dashboard');
+
+  const statusMap = {
+    pending: { label: 'معلق', cls: 'badge-muted' },
+    processing: { label: 'قيد التنفيذ', cls: 'badge-info' },
+    completed: { label: 'مكتمل', cls: 'badge-success' },
+    cancelled: { label: 'ملغي', cls: 'badge-danger' }
+  };
+
+  async function loadDashboard() {
+    // Load counts
+    const [ordersCount, productsCount, ingotsCount, agentsCount, usersCount] = await Promise.all([
+      DB.orders.count(),
+      DB.products.count(),
+      DB.ingots.count(),
+      DB.agents.count(),
+      DB.users.count()
+    ]);
+
+    document.getElementById('count-orders').textContent = formatNumber(ordersCount);
+    document.getElementById('count-products').textContent = formatNumber(productsCount);
+    document.getElementById('count-ingots').textContent = formatNumber(ingotsCount);
+    document.getElementById('count-agents').textContent = formatNumber(agentsCount);
+    document.getElementById('count-users').textContent = formatNumber(usersCount);
+
+    // Load recent orders
+    const orders = await DB.orders.getLast(10);
+    const tbody = document.getElementById('recent-orders-body');
+    if (orders.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div><h3>لا توجد طلبات حتى الآن</h3><p><a href="orders.html" class="btn btn-primary btn-sm" style="margin-top:12px;">إضافة طلب</a></p></div></td></tr>`;
+    } else {
+      tbody.innerHTML = orders.map((o, i) => {
+        const status = statusMap[o.status] || { label: o.status || '-', cls: 'badge-muted' };
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${o.clientName || '-'}</td>
+          <td>${o.productName || '-'}</td>
+          <td>${formatNumber(o.weight)}</td>
+          <td>${formatNumber(o.value)}</td>
+          <td><span class="badge ${status.cls}">${status.label}</span></td>
+          <td>${formatDate(o.createdAt)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Load recent products
+    const products = await DB.products.getAll('createdAt', 'desc');
+    const ptbody = document.getElementById('recent-products-body');
+    if (products.length === 0) {
+      ptbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد منتجات</td></tr>`;
+    } else {
+      ptbody.innerHTML = products.slice(0, 5).map(p => `
+        <tr>
+          <td>${p.name || '-'}</td>
+          <td>${p.karat || '-'} عيار</td>
+          <td>${formatNumber(p.price)} ر.س</td>
+        </tr>`).join('');
+    }
+
+    // Load recent ingots
+    const ingots = await DB.ingots.getAll('createdAt', 'desc');
+    const itbody = document.getElementById('recent-ingots-body');
+    if (ingots.length === 0) {
+      itbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد سبائك</td></tr>`;
+    } else {
+      itbody.innerHTML = ingots.slice(0, 5).map(ing => `
+        <tr>
+          <td>${ing.serialNumber || '-'}</td>
+          <td>${formatNumber(ing.weight)} جرام</td>
+          <td>${ing.supplier || '-'}</td>
+        </tr>`).join('');
+    }
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (user) loadDashboard();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>السبائك — مصنع الشلوي للذهب</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-placeholder"></div>
+  <div class="main-content">
+    <div id="header-placeholder"></div>
+    <div class="page-content">
+
+      <div class="breadcrumb">
+        <a href="index.html">🏠 الرئيسية</a>
+        <span class="sep">›</span>
+        <span>السبائك</span>
+      </div>
+
+      <div class="card fade-in fade-in-1">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🥇</span> إدارة السبائك</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div class="search-bar">
+              <input type="text" id="search-input" placeholder="بحث برقم السبيكة..." oninput="filterTable()" />
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ إضافة سبيكة</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>رقم السبيكة</th>
+                <th>الوزن (جرام)</th>
+                <th>العيار</th>
+                <th>المورد</th>
+                <th>سعر الشراء</th>
+                <th>الحالة</th>
+                <th>التاريخ</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr><td colspan="9"><div class="empty-state"><div class="icon">⏳</div><h3>جاري التحميل...</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><span class="icon">🥇</span> <span id="modal-title-text">إضافة سبيكة جديدة</span></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" />
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">رقم السبيكة *</label>
+          <input type="text" id="f-serialNumber" class="form-control" placeholder="مثل: ING-001" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">العيار *</label>
+          <select id="f-karat" class="form-control">
+            <option value="18">18</option>
+            <option value="21">21</option>
+            <option value="22">22</option>
+            <option value="24">24</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">الوزن (جرام) *</label>
+          <input type="number" id="f-weight" class="form-control" placeholder="0.00" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">سعر الشراء (ريال)</label>
+          <input type="number" id="f-purchasePrice" class="form-control" placeholder="0.00" step="0.01" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">المورد</label>
+          <input type="text" id="f-supplier" class="form-control" placeholder="اسم المورد" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">الحالة</label>
+          <select id="f-status" class="form-control">
+            <option value="available">متاحة</option>
+            <option value="in_use">قيد الاستخدام</option>
+            <option value="sold">مباعة</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظات</label>
+        <textarea id="f-notes" class="form-control" rows="2" placeholder="أي ملاحظات..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveRecord()">حفظ السبيكة</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger);">⚠️ تأكيد الحذف</div>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body"><p style="color:var(--text-secondary);">هل أنت متأكد من حذف هذه السبيكة؟</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">إلغاء</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">حذف</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/database.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  requireAuth();
+  injectLayout('السبائك', 'إدارة مخزون السبائك الذهبية', 'ingots');
+
+  let allRecords = [];
+  let deleteId = null;
+
+  const statusMap = {
+    available: { label: 'متاحة', cls: 'badge-success' },
+    in_use: { label: 'قيد الاستخدام', cls: 'badge-info' },
+    sold: { label: 'مباعة', cls: 'badge-muted' }
+  };
+
+  async function loadRecords() {
+    allRecords = await DB.ingots.getAll();
+    renderTable(allRecords);
+  }
+
+  function renderTable(records) {
+    const tbody = document.getElementById('table-body');
+    if (records.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">🥇</div><h3>لا توجد سبائك</h3><p>اضغط على "إضافة سبيكة" للبدء</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = records.map((r, i) => {
+      const s = statusMap[r.status] || { label: r.status || '-', cls: 'badge-muted' };
+      return `<tr>
+        <td>${i + 1}</td>
+        <td><strong>${r.serialNumber || '-'}</strong></td>
+        <td>${formatNumber(r.weight)}</td>
+        <td><span class="badge badge-gold">${r.karat || '-'} عيار</span></td>
+        <td>${r.supplier || '-'}</td>
+        <td>${formatNumber(r.purchasePrice)} ر.س</td>
+        <td><span class="badge ${s.cls}">${s.label}</span></td>
+        <td style="font-size:12px;color:var(--text-muted)">${formatDate(r.createdAt)}</td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-outline btn-sm" onclick="editRecord('${r.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteRecord('${r.id}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    renderTable(allRecords.filter(r => (r.serialNumber || '').toLowerCase().includes(q) || (r.supplier || '').toLowerCase().includes(q)));
+  }
+
+  function openModal() {
+    document.getElementById('edit-id').value = '';
+    ['serialNumber','weight','purchasePrice','supplier','notes'].forEach(f => { const el = document.getElementById('f-' + f); if (el) el.value = ''; });
+    document.getElementById('f-karat').value = '24';
+    document.getElementById('f-status').value = 'available';
+    document.getElementById('modal-title-text').textContent = 'إضافة سبيكة جديدة';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function editRecord(id) {
+    const r = allRecords.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('edit-id').value = id;
+    document.getElementById('f-serialNumber').value = r.serialNumber || '';
+    document.getElementById('f-karat').value = r.karat || '24';
+    document.getElementById('f-weight').value = r.weight || '';
+    document.getElementById('f-purchasePrice').value = r.purchasePrice || '';
+    document.getElementById('f-supplier').value = r.supplier || '';
+    document.getElementById('f-status').value = r.status || 'available';
+    document.getElementById('f-notes').value = r.notes || '';
+    document.getElementById('modal-title-text').textContent = 'تعديل السبيكة';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  async function saveRecord() {
+    const id = document.getElementById('edit-id').value;
+    const data = {
+      serialNumber: document.getElementById('f-serialNumber').value.trim(),
+      karat: document.getElementById('f-karat').value,
+      weight: parseFloat(document.getElementById('f-weight').value) || 0,
+      purchasePrice: parseFloat(document.getElementById('f-purchasePrice').value) || 0,
+      supplier: document.getElementById('f-supplier').value.trim(),
+      status: document.getElementById('f-status').value,
+      notes: document.getElementById('f-notes').value.trim()
+    };
+    if (!data.serialNumber) { showToast('يرجى إدخال رقم السبيكة', 'warning'); return; }
+    const result = id ? await DB.ingots.update(id, data) : await DB.ingots.add(data);
+    if (result.success) { closeModal(); loadRecords(); }
+  }
+
+  function deleteRecord(id) { deleteId = id; document.getElementById('delete-modal').classList.add('open'); }
+  function closeDeleteModal() { deleteId = null; document.getElementById('delete-modal').classList.remove('open'); }
+  async function confirmDelete() {
+    if (!deleteId) return;
+    const result = await DB.ingots.delete(deleteId);
+    if (result.success) { closeDeleteModal(); loadRecords(); }
+  }
+
+  auth.onAuthStateChanged(user => { if (user) loadRecords(); });
+</script>
+</body>
+</html>
